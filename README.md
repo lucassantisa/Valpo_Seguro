@@ -21,4 +21,4 @@ python manage.py runserver
 
 (En Mac o Linux, el segundo comando es `source venv/bin/activate`.)
 
-Luego abre http://127.0.0.1:8000/ en el navegador. No hace falta crear una base de datos ni ejecutar `migrate`.
+Luego abre http://127.0.0.1:8000/ en el navegador.
