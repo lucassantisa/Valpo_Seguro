@@ -1,0 +1,20 @@
+{% extends "rutas/base.html" %}
+{% load static %}
+
+{% block titulo %}Lugares · Valpo Seguro{% endblock %}
+
+{% block contenido %}
+  <h2>Lugares para visitar</h2>
+
+  {% for lugar in lugares %}
+    <div class="caja">
+      <h3>{{ lugar.nombre }}</h3>
+      <p class="nota">{{ lugar.tipo }} · Horario: {{ lugar.horario }}</p>
+      <p>{{ lugar.descripcion }}</p>
+      {% for foto in lugar.fotos %}
+        <img class="foto" src="{% static 'rutas/fotos/'|add:foto %}" alt="Foto de {{ lugar.nombre }}">
+      {% endfor %}
+      <p><a href="{% url 'mapa' %}?destino={{ lugar.id }}">Ir a este lugar en el mapa</a></p>
+    </div>
+  {% endfor %}
+{% endblock %}

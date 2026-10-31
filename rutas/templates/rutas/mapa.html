@@ -1,0 +1,160 @@
+{% extends "rutas/base.html" %}
+{% load static %}
+
+{% block head %}
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+{% endblock %}
+
+{% block contenido %}
+  <!-- ENTRADA: el usuario elige el punto de partida y el destino -->
+  <form method="get" action="{% url 'mapa' %}">
+    <h2>1. ¿Desde dónde sales?</h2>
+    <button type="button" id="boton-ubicacion">Usar mi ubicación</button>
+    <button type="button" id="boton-mapa">Elegir en el mapa</button>
+    <select id="puntos-ejemplo">
+      <option value="">O elige un punto de partida de ejemplo...</option>
+      {% for punto in puntos_de_partida %}
+        <option value="{{ forloop.counter0 }}">{{ punto.nombre }}</option>
+      {% endfor %}
+    </select>
+    <input type="hidden" name="lat" id="lat" value="{{ lat }}">
+    <input type="hidden" name="lng" id="lng" value="{{ lng }}">
+    <p class="nota" id="texto-origen">Aún no eliges un punto de partida.</p>
+
+    <h2>2. ¿A dónde vas?</h2>
+    <select name="destino">
+      <option value="">Elige un lugar...</option>
+      {% for lugar in lugares %}
+        <option value="{{ lugar.id }}" {% if lugar.id == destino_id %}selected{% endif %}>{{ lugar.nombre }}</option>
+      {% endfor %}
+    </select>
+
+    <button type="submit" name="calcular" value="1" class="principal">Calcular ruta</button>
+  </form>
+
+  <!-- SALIDA: el resultado que calculó Django -->
+  {% if error %}
+    <div class="error">{{ error }}</div>
+  {% endif %}
+
+  {% if resultado %}
+    <div class="caja">
+      <h2>Ruta a {{ resultado.destino.nombre }}</h2>
+      <p><strong>Distancia:</strong> {{ resultado.distancia }} m &nbsp; <strong>Tiempo a pie:</strong> {{ resultado.minutos }} min</p>
+
+      {% if resultado.zonas_cruzadas %}
+        <p class="aviso">Esta ruta pasa por zonas de precaución:</p>
+        <ul>
+          {% for zona in resultado.zonas_cruzadas %}
+            <li>{{ zona.nombre }} (unos {{ zona.metros }} m)</li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="bueno">Esta ruta no pasa por las zonas de precaución registradas.</p>
+      {% endif %}
+
+      <p class="nota">Horario del lugar: {{ resultado.destino.horario }}</p>
+      <img class="foto" src="{% static 'rutas/fotos/'|add:resultado.destino.fotos.0 %}" alt="Foto de {{ resultado.destino.nombre }}">
+    </div>
+  {% endif %}
+
+  <div id="mapa"></div>
+  <p class="nota">Las zonas rojas son zonas de precaución marcadas por el equipo. No garantizan seguridad.</p>
+
+  <!-- Datos que Django le pasa al JavaScript -->
+  {{ lugares|json_script:"datos-lugares" }}
+  {{ zonas|json_script:"datos-zonas" }}
+  {{ puntos_de_partida|json_script:"datos-puntos" }}
+  {{ ruta|json_script:"datos-ruta" }}
+
+  <script>
+    // Leemos los datos que mandó Django
+    var lugares = JSON.parse(document.getElementById("datos-lugares").textContent);
+    var zonas = JSON.parse(document.getElementById("datos-zonas").textContent);
+    var puntos = JSON.parse(document.getElementById("datos-puntos").textContent);
+    var ruta = JSON.parse(document.getElementById("datos-ruta").textContent);
+
+    // Creamos el mapa
+    var mapa = L.map("mapa").setView([-33.0458, -71.6197], 14);
+    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution: "&copy; OpenStreetMap"
+    }).addTo(mapa);
+
+    // Dibujamos las zonas de precaución (círculos rojos)
+    for (var i = 0; i < zonas.length; i++) {
+      L.circle(zonas[i].centro, { radius: zonas[i].radio, color: "red", weight: 1 }).addTo(mapa);
+    }
+
+    // Marcamos los lugares
+    for (var j = 0; j < lugares.length; j++) {
+      L.marker([lugares[j].lat, lugares[j].lng]).addTo(mapa).bindPopup(lugares[j].nombre);
+    }
+
+    // Punto de partida
+    var marcadorOrigen = null;
+    var eligiendoEnMapa = false;
+
+    function poner_origen(lat, lng) {
+      document.getElementById("lat").value = lat;
+      document.getElementById("lng").value = lng;
+      document.getElementById("texto-origen").textContent = "Punto de partida elegido (" + lat.toFixed(5) + ", " + lng.toFixed(5) + ")";
+      if (marcadorOrigen !== null) {
+        mapa.removeLayer(marcadorOrigen);
+      }
+      marcadorOrigen = L.circleMarker([lat, lng], { radius: 9, color: "white", weight: 3, fillColor: "blue", fillOpacity: 1 }).addTo(mapa);
+    }
+
+    // Botón: usar la ubicación del navegador
+    document.getElementById("boton-ubicacion").onclick = function () {
+      if (!navigator.geolocation) {
+        alert("Tu navegador no permite usar la ubicación.");
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(
+        function (posicion) {
+          poner_origen(posicion.coords.latitude, posicion.coords.longitude);
+          mapa.setView([posicion.coords.latitude, posicion.coords.longitude], 15);
+        },
+        function () {
+          alert("No pudimos obtener tu ubicación. Prueba con 'Elegir en el mapa'.");
+        }
+      );
+    };
+
+    // Botón: elegir el punto tocando el mapa
+    document.getElementById("boton-mapa").onclick = function () {
+      eligiendoEnMapa = true;
+      document.getElementById("texto-origen").textContent = "Toca el mapa para elegir tu punto de partida...";
+    };
+    mapa.on("click", function (evento) {
+      if (eligiendoEnMapa) {
+        poner_origen(evento.latlng.lat, evento.latlng.lng);
+        eligiendoEnMapa = false;
+      }
+    });
+
+    // Lista: puntos de partida de ejemplo
+    document.getElementById("puntos-ejemplo").onchange = function () {
+      if (this.value !== "") {
+        var punto = puntos[parseInt(this.value)];
+        poner_origen(punto.lat, punto.lng);
+        mapa.setView([punto.lat, punto.lng], 15);
+      }
+    };
+
+    // Si la página se recargó con un punto de partida, lo volvemos a dibujar
+    var latGuardada = document.getElementById("lat").value;
+    var lngGuardada = document.getElementById("lng").value;
+    if (latGuardada !== "" && lngGuardada !== "") {
+      poner_origen(parseFloat(latGuardada), parseFloat(lngGuardada));
+    }
+
+    // Dibujamos la ruta que calculó Django
+    if (ruta.length > 0) {
+      var linea = L.polyline(ruta, { color: "blue", weight: 5 }).addTo(mapa);
+      mapa.fitBounds(linea.getBounds());
+    }
+  </script>
+{% endblock %}
