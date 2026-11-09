@@ -1,7 +1,13 @@
 # Configuración del proyecto. Solo dejamos lo que usamos.
+import os
 from pathlib import Path
 
+from dotenv import load_dotenv
+
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Lee el archivo .env, donde guardamos la clave de OpenRouteService (ese archivo NO se sube a GitHub)
+load_dotenv(BASE_DIR / ".env")
 
 SECRET_KEY = "clave-solo-para-desarrollo"
 DEBUG = True
@@ -37,3 +43,6 @@ LANGUAGE_CODE = "es-cl"
 TIME_ZONE = "America/Santiago"
 
 STATIC_URL = "static/"
+
+# Clave de OpenRouteService. Si está vacía, la aplicación igual funciona (con el servicio OSRM, sin evitar zonas).
+ORS_API_KEY = os.environ.get("ORS_API_KEY", "").strip()

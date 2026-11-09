@@ -54,6 +54,7 @@
         <p class="bueno">Esta ruta no pasa por las zonas de precaución registradas.</p>
       {% endif %}
 
+      <p class="nota">Ruta calculada con {{ resultado.proveedor }}{% if resultado.evitando %}, pidiéndole que evite las zonas de precaución{% endif %}.</p>
       <p class="nota">Horario del lugar: {{ resultado.destino.horario }}</p>
       <img class="foto" src="{% static 'rutas/fotos/'|add:resultado.destino.fotos.0 %}" alt="Foto de {{ resultado.destino.nombre }}">
     </div>

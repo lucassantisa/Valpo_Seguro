@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.shortcuts import render
 
 from . import calculos, datos
@@ -23,8 +24,9 @@ def calcular_resultado(lat, lng, destino_id):
     except ValueError:
         return None, "El punto de partida no es válido."
 
-    # Procesamiento: pedir rutas y elegir la que evita mejor las zonas de precaución
-    rutas, error = calculos.pedir_rutas(origen, [destino["lat"], destino["lng"]])
+    # Procesamiento: pedir rutas (con clave, evitando las zonas) y elegir la que pase menos por zonas
+    rutas, error, proveedor, evitando = calculos.buscar_rutas(
+        origen, [destino["lat"], destino["lng"]], datos.ZONAS, settings.ORS_API_KEY)
     if error != "":
         return None, error
     ruta = calculos.elegir_ruta(rutas, datos.ZONAS)
@@ -38,6 +40,8 @@ def calcular_resultado(lat, lng, destino_id):
         "distancia": round(ruta["distancia"]),
         "minutos": max(1, round(ruta["duracion"] / 60)),
         "zonas_cruzadas": zonas_cruzadas,
+        "proveedor": proveedor,
+        "evitando": evitando,
         "coordenadas": ruta["coordenadas"],
     }
     return resultado, ""
