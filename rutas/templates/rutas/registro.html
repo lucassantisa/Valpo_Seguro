@@ -1,0 +1,15 @@
+{% extends "rutas/base.html" %}
+
+{% block titulo %}Crear cuenta · Valpo Seguro{% endblock %}
+
+{% block contenido %}
+  <h2>Crear cuenta</h2>
+  <div class="caja">
+    <form method="post">
+      {% csrf_token %}
+      {{ formulario.as_p }}
+      <button type="submit" class="principal">Crear cuenta</button>
+    </form>
+    <p class="nota">¿Ya tienes cuenta? <a href="{% url 'login' %}">Inicia sesión</a></p>
+  </div>
+{% endblock %}

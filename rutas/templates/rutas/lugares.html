@@ -6,15 +6,55 @@
 {% block contenido %}
   <h2>Lugares para visitar</h2>
 
-  {% for lugar in lugares %}
-    <div class="caja">
-      <h3>{{ lugar.nombre }}</h3>
-      <p class="nota">{{ lugar.tipo }} · Horario: {{ lugar.horario }}</p>
-      <p>{{ lugar.descripcion }}</p>
-      {% for foto in lugar.fotos %}
-        <img class="foto" src="{% static 'rutas/fotos/'|add:foto %}" alt="Foto de {{ lugar.nombre }}">
+  {% if error %}
+    <div class="error">{{ error }}</div>
+  {% endif %}
+
+  {% for item in items %}
+    <div class="caja" id="{{ item.lugar.id }}">
+      <h3>{{ item.lugar.nombre }}</h3>
+      <p class="nota">{{ item.lugar.tipo }} · Horario: {{ item.lugar.horario }}</p>
+      <p>{{ item.lugar.descripcion }}</p>
+      {% for foto in item.lugar.fotos %}
+        <img class="foto" src="{% static 'rutas/fotos/'|add:foto %}" alt="Foto de {{ item.lugar.nombre }}">
       {% endfor %}
-      <p><a href="{% url 'mapa' %}?destino={{ lugar.id }}">Ir a este lugar en el mapa</a></p>
+      <p><a href="{% url 'mapa' %}?destino={{ item.lugar.id }}">Ir a este lugar en el mapa</a></p>
+
+      <!-- Reseñas del lugar -->
+      <h4>Reseñas</h4>
+      {% if item.cantidad > 0 %}
+        <p><strong>Promedio: {{ item.promedio }} de 5</strong> ({{ item.cantidad }} reseña{{ item.cantidad|pluralize }})</p>
+      {% endif %}
+
+      {% for resena in item.resenas %}
+        <div class="resena">
+          <strong>{{ resena.usuario.username }}</strong> · {{ resena.calificacion }} de 5
+          <br>{{ resena.comentario }}
+        </div>
+      {% empty %}
+        <p class="nota">Aún no hay reseñas de este lugar.</p>
+      {% endfor %}
+
+      {% if user.is_authenticated %}
+        <form method="post" action="{% url 'lugares' %}">
+          {% csrf_token %}
+          <input type="hidden" name="lugar_id" value="{{ item.lugar.id }}">
+          <p>
+            Tu calificación:
+            <select name="calificacion">
+              <option value="5">5 (excelente)</option>
+              <option value="4">4</option>
+              <option value="3">3</option>
+              <option value="2">2</option>
+              <option value="1">1 (malo)</option>
+            </select>
+          </p>
+          <textarea name="comentario" maxlength="500" placeholder="Escribe tu comentario..." required></textarea>
+          <button type="submit">Publicar reseña</button>
+        </form>
+      {% else %}
+        <p class="nota"><a href="{% url 'login' %}">Inicia sesión</a> para dejar una reseña.</p>
+      {% endif %}
     </div>
   {% endfor %}
 {% endblock %}
