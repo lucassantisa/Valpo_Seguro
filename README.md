@@ -1,4 +1,4 @@
-# Valpo Seguro (Entregable III: funcionalidad corazón)
+# Valpo Seguro
 
 Aplicación web hecha con Django para turistas en Valparaíso. La **funcionalidad corazón** es calcular una
 **ruta a pie** hasta un lugar patrimonial **evitando las zonas de precaución**.
