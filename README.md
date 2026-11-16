@@ -1,6 +1,6 @@
 # Valpo Seguro
 
-Proyecto del ramo hecho con Python y Django. Es una página web para que los turistas en Valparaíso puedan buscar cómo llegar caminando a lugares conocidos tratando de no pasar por sectores peligrosos.
+Proyecto desarrollado en Python y Django. Es una aplicación web pensada para turistas en Valparaíso que permite calcular rutas a pie hacia distintos puntos de interés, evitando las zonas de precaución marcadas en el mapa.
 
 ## Integrantes
 - Diego Casas
@@ -10,90 +10,69 @@ Proyecto del ramo hecho con Python y Django. Es una página web para que los tur
 
 ---
 
-## ¿De qué trata el proyecto?
+## ¿Qué hace el proyecto?
 
-La función principal de la página es calcular rutas a pie hacia distintos puntos turísticos de Valparaíso y revisar si el camino pasa por alguna de las zonas de precaución que dejamos marcadas en el mapa.
+La función principal es trazar recorridos caminando por Valparaíso y verificar si la ruta pasa por alguno de los sectores de riesgo que definimos previamente.
 
-El funcionamiento básico es así:
-1. **El usuario elige:** Pone desde dónde sale (puede usar su ubicación actual, pinchar directo en el mapa o usar uno de los puntos de ejemplo que dejamos listos) y elige el destino turístico al que quiere ir.
-2. **El programa calcula:** Por detrás, Django le pide a una API de mapas el recorrido a pie y calcula si la línea de la ruta cruza alguna zona peligrosa. Si se le pone una clave de OpenRouteService, el mapa busca un desvío real para rodear la zona; si no se le pone clave, usa OSRM y te avisa por cuáles sectores peligrosos vas a pasar.
-3. **Muestra el resultado:** Dibuja la ruta en el mapa, dice cuántos metros son, cuánto tiempo demora aproximadamente caminando y muestra un mensaje (verde si vas seguro o amarillo si hay que tener cuidado).
+El flujo funciona en tres pasos:
+1. **Entrada:** El usuario selecciona su punto de partida usando su ubicación actual, marcando un punto directo en el mapa o eligiendo uno de los puntos de ejemplo, y escoge un destino turístico.
+2. **Procesamiento:** El backend en Django consulta un servicio de mapas para obtener el trayecto peatonal y calcula si cruza alguna zona de precaución. Con una clave de OpenRouteService configurada, el sistema solicita un desvío real para rodear esas áreas; sin la clave, utiliza OSRM y advierte al usuario si el camino pasa por algún sector de cuidado.
+3. **Resultado:** Se muestra la ruta dibujada en el mapa junto con la distancia en metros, el tiempo estimado a pie y una alerta indicando si el trayecto es seguro o si cruza zonas de precaución.
 
-### Otras cosas que agregamos:
-- **Registro e inicio de sesión:** Se pueden crear cuentas y entrar con usuario y contraseña (`/registro/` y `/ingresar/`).
-- **Reseñas:** En la pestaña de **Lugares** (`/lugares/`), si tienes sesión iniciada puedes dejar un comentario y ponerle nota (del 1 al 5) a cada lugar turístico.
+### Funcionalidades adicionales:
+- **Cuentas de usuario:** Permite registrarse e iniciar sesión con usuario y contraseña desde `/registro/` y `/ingresar/`.
+- **Reseñas:** En la sección **Lugares** ubicada en `/lugares/`, los usuarios registrados pueden dejar una calificación del 1 al 5 y un comentario en cada atractivo turístico.
 
 ---
 
-## Cómo correr la página en tu compu
+## Cómo ejecutar el proyecto
 
-Para probarlo necesitas tener **Python (3.12 o más nuevo)** instalado y estar conectado a **internet** (porque el mapa y el cálculo de calles se cargan desde internet).
+Para correr la aplicación se necesita **Python 3.12 o superior** y **conexión a internet** para cargar el mapa y calcular las rutas.
 
-1. Abre la terminal en la carpeta del proyecto y crea el entorno virtual:
+Abre PowerShell o CMD en la carpeta raíz del proyecto y ejecuta los siguientes comandos:
+
 ```bash
 python -m venv venv
-```
-
-2. Activa el entorno:
-- En Windows:
-```bash
 venv\Scripts\activate
-```
-- En Mac o Linux:
-```bash
-source venv/bin/activate
-```
-
-3. Instala lo que está en el `requirements.txt`:
-```bash
 pip install -r requirements.txt
-```
-
-4. Crea la base de datos (solo se hace la primera vez para que guarden los usuarios y las reseñas):
-```bash
 python manage.py migrate
-```
-
-5. Prende el servidor:
-```bash
 python manage.py runserver
 ```
 
-6. Entra desde tu navegador a: **http://127.0.0.1:8000/**
+El comando `migrate` crea la base de datos local para guardar usuarios y reseñas; solo es necesario correrlo la primera vez.
+
+Una vez iniciado el servidor, abre en el navegador: **http://127.0.0.1:8000/**
 
 ---
 
-## Clave de OpenRouteService
+## Configuración de OpenRouteService
 
-El programa no esquiva las zonas peligrosas sin el token.
+Para que el mapa calcule desvíos reales y esquive las zonas peligrosas en lugar de solo advertir sobre ellas, es necesario configurar un token gratuito:
 
-1. Créate una cuenta gratis en [openrouteservice.org](https://openrouteservice.org) y genera un token.
-2. Duplica el archivo `.env.example` que está en la carpeta principal y cámbiale el nombre a `.env`.
-3. Abre el `.env` y pega tu clave al lado de `ORS_API_KEY=` (sin espacios ni comillas).
-4. Apaga el servidor (`Ctrl + C`) y vuélvelo a prender con `python manage.py runserver`.
-
----
-
-## Ejemplos para probar que funciona
-
-Dejamos unos datos listos en `rutas/datos.py` (6 lugares turísticos, 3 zonas peligrosas y 3 puntos de inicio de ejemplo) para no tener que andar buscando coordenadas a mano:
-
-- **Caso 1 (Ruta limpia):** Elige el punto de ejemplo *"Cerro Alegre"* como inicio y *"Cerro Concepción"* como destino. Debería dibujar la ruta y salir un cuadro verde diciendo que no pasa por zonas de precaución.
-- **Caso 2 (Ruta con aviso):** Elige *"Plaza Sotomayor"* como inicio y *"Cerro Alegre"* como destino. Va a calcular la ruta pero te saldrá una alerta amarilla porque la plaza está justo dentro de la zona de cuidado "Barrio Puerto".
-- **Caso 3 (Si falta un dato):** Si aprietas *"Calcular ruta"* sin haber elegido dónde partes, te sale un aviso pidiendo que elijas primero el punto de partida.
+1. Crea una cuenta en [openrouteservice.org](https://openrouteservice.org) y genera una API key.
+2. En la carpeta principal del proyecto, haz una copia del archivo `.env.example` y cámbiale el nombre a `.env`.
+3. Abre el archivo `.env` y pega tu clave después de `ORS_API_KEY=` sin espacios ni comillas.
+4. Detén el servidor presionando `Ctrl + C` y vuelve a iniciarlo con `python manage.py runserver`.
 
 ---
 
-## Cómo ordenamos los archivos
+## Casos de prueba
 
-- `config/`: Archivos de configuración del proyecto Django y las URLs generales.
-- `rutas/`: La app principal donde está todo nuestro código:
-  - `datos.py`: Listas con las coordenadas de los lugares, las zonas de cuidado y los puntos de ejemplo.
-  - `calculos.py`: Las funciones que piden las rutas a internet y revisan si chocan con los círculos de precaución.
-  - `models.py`: La tabla de la base de datos para guardar las reseñas.
-  - `views.py`: Lo que recibe los clics del usuario y manda los datos a los HTML.
-  - `templates/rutas/`: Las páginas HTML.
-  - `static/rutas/fotos/`: Las fotos de los lugares turísticos.
+En `rutas/datos.py` dejamos precargados 6 lugares turísticos, 3 zonas de precaución y 3 puntos de partida de ejemplo para probar la aplicación rápidamente:
 
+- **Caso 1 — Ruta segura:** Selecciona *"Cerro Alegre"* como punto de partida y *"Cerro Concepción"* como destino. Debería trazar la ruta y mostrar un aviso verde indicando que no pasa por zonas de precaución.
+- **Caso 2 — Ruta con advertencia:** Selecciona *"Plaza Sotomayor"* como punto de partida y *"Cerro Alegre"* como destino. Calculará el recorrido, pero mostrará una alerta amarilla porque el punto de inicio está dentro de la zona "Barrio Puerto".
+- **Caso 3 — Validación de datos:** Si presionas *"Calcular ruta"* sin haber elegido un inicio, el sistema mostrará un mensaje solicitando seleccionar primero el punto de partida.
 
+---
 
+## Estructura del proyecto
+
+- `config/`: Configuración general del proyecto Django y archivo principal de URLs.
+- `rutas/`: Aplicación principal donde se encuentra la lógica del sistema:
+  - `datos.py`: Coordenadas de los atractivos turísticos, zonas de precaución y puntos de ejemplo.
+  - `calculos.py`: Funciones encargadas de consultar las rutas y detectar intersecciones con las zonas de riesgo.
+  - `models.py`: Modelo de base de datos para almacenar las reseñas de los usuarios.
+  - `views.py`: Controladores que reciben las peticiones del usuario y envían los datos a las vistas.
+  - `templates/rutas/`: Archivos HTML de la interfaz.
+  - `static/rutas/fotos/`: Imágenes de los puntos turísticos.
