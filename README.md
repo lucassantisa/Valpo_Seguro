@@ -1,101 +1,103 @@
 # Valpo Seguro
 
-Aplicación web hecha con Django para turistas en Valparaíso. La **funcionalidad corazón** es calcular una
-**ruta a pie** hasta un lugar patrimonial **evitando las zonas de precaución**.
+Proyecto del ramo hecho con Python y Django. Es una página web para que los turistas en Valparaíso puedan buscar cómo llegar caminando a lugares conocidos tratando de no pasar por sectores peligrosos.
 
-1. **Entrada:** el usuario elige su punto de partida (su ubicación, un punto en el mapa o un punto de ejemplo) y un lugar de destino.
-2. **Procesamiento:** Django le pide una ruta a pie a un servicio de internet y mide cuántos metros pasan por zonas de precaución.
-   Con una clave de OpenRouteService (opcional) le pide que **evite** las zonas; sin clave usa OSRM, elige la alternativa que pasa menos
-   por ellas y avisa.
-3. **Salida:** la página muestra la ruta en el mapa, la distancia, el tiempo a pie y un aviso con las zonas por las que pasa.
+## Integrantes
+- Diego Casas
+- Lucas Santis
+- Alejandro Fuenzalida
+- Martina Torrejón
 
-## Cómo ejecutarlo en tu computador (localhost)
+---
 
-Necesitas Python 3.12 o más nuevo e **internet** (el mapa y el cálculo de rutas usan servicios en línea).
-La aplicación funciona **sin clave** (modo OSRM). Para que las rutas **evite**n las zonas hace falta la clave de OpenRouteService (ver más abajo).
+## ¿De qué trata el proyecto?
 
-```
+La función principal de la página es calcular rutas a pie hacia distintos puntos turísticos de Valparaíso y revisar si el camino pasa por alguna de las zonas de precaución que dejamos marcadas en el mapa.
+
+El funcionamiento básico es así:
+1. **El usuario elige:** Pone desde dónde sale (puede usar su ubicación actual, pinchar directo en el mapa o usar uno de los puntos de ejemplo que dejamos listos) y elige el destino turístico al que quiere ir.
+2. **El programa calcula:** Por detrás, Django le pide a una API de mapas el recorrido a pie y calcula si la línea de la ruta cruza alguna zona peligrosa. Si se le pone una clave de OpenRouteService, el mapa busca un desvío real para rodear la zona; si no se le pone clave, usa OSRM y te avisa por cuáles sectores peligrosos vas a pasar.
+3. **Muestra el resultado:** Dibuja la ruta en el mapa, dice cuántos metros son, cuánto tiempo demora aproximadamente caminando y muestra un mensaje (verde si vas seguro o amarillo si hay que tener cuidado).
+
+### Otras cosas que agregamos:
+- **Registro e inicio de sesión:** Se pueden crear cuentas y entrar con usuario y contraseña (`/registro/` y `/ingresar/`).
+- **Reseñas:** En la pestaña de **Lugares** (`/lugares/`), si tienes sesión iniciada puedes dejar un comentario y ponerle nota (del 1 al 5) a cada lugar turístico.
+
+---
+
+## Cómo correr la página en tu compu
+
+Para probarlo necesitas tener **Python (3.12 o más nuevo)** instalado y estar conectado a **internet** (porque el mapa y el cálculo de calles se cargan desde internet).
+
+1. Abre la terminal en la carpeta del proyecto y crea el entorno virtual:
+```bash
 python -m venv venv
+```
+
+2. Activa el entorno:
+- En Windows:
+```bash
 venv\Scripts\activate
+```
+- En Mac o Linux:
+```bash
+source venv/bin/activate
+```
+
+3. Instala lo que está en el `requirements.txt`:
+```bash
 pip install -r requirements.txt
+```
+
+4. Crea la base de datos (solo se hace la primera vez para que guarden los usuarios y las reseñas):
+```bash
 python manage.py migrate
+```
+
+5. Prende el servidor:
+```bash
 python manage.py runserver
 ```
 
-`python manage.py migrate` crea la base de datos (el archivo `db.sqlite3`) con las tablas de usuarios y reseñas. Se ejecuta una sola vez.
+6. Entra desde tu navegador a: **http://127.0.0.1:8000/**
 
-(En Mac o Linux, el segundo comando es `source venv/bin/activate`.)
+*(Si quieres correr los tests automáticos que hicimos para revisar que no haya errores, escribe `python manage.py test` en la terminal).*
 
-Luego abre http://127.0.0.1:8000/ en el navegador.
+---
 
-## Clave de OpenRouteService (opcional, para evitar zonas de verdad)
+## Clave de OpenRouteService (Opcional)
 
-1. Crea una cuenta gratuita en https://openrouteservice.org y genera una clave (*token*).
-2. En la carpeta del proyecto (donde está `manage.py`), copia `.env.example` con el nombre `.env`:
-   ```
-   copy .env.example .env
-   ```
-3. Abre `.env` y pega la clave después de `ORS_API_KEY=` (sin comillas ni espacios).
-4. Reinicia el servidor (`Ctrl + C` y `python manage.py runserver`).
+El programa funciona altiro sin configurar ninguna clave, pero en ese modo solo te **avisa** si pasas por una zona de cuidado. Para que la ruta **evite** de verdad esas zonas hay que poner una clave gratuita de OpenRouteService:
 
-Si funciona, el resultado de cada ruta dice "Ruta calculada con OpenRouteService, pidiéndole que evite las zonas de precaución".
-El archivo `.env` **no se sube a GitHub** (está en `.gitignore`): la clave es personal y no se debe compartir.
+1. Créate una cuenta gratis en [openrouteservice.org](https://openrouteservice.org) y genera un token.
+2. Duplica el archivo `.env.example` que está en la carpeta principal y cámbiale el nombre a `.env`.
+3. Abre el `.env` y pega tu clave al lado de `ORS_API_KEY=` (sin espacios ni comillas).
+4. Apaga el servidor (`Ctrl + C`) y vuélvelo a prender con `python manage.py runserver`.
 
-## Cuentas de usuario y reseñas
+*(El `.env` está puesto en el `.gitignore` para que no se suba la clave personal a GitHub).*
 
-- **Crear cuenta** (`/registro/`) e **iniciar sesión** (`/ingresar/`) con usuario y contraseña. Las contraseñas se guardan cifradas.
-- **Reseñas:** en la página **Lugares** (`/lugares/`), cada lugar muestra sus reseñas, el promedio de calificaciones y, si iniciaste
-  sesión, un formulario para dejar tu calificación (1 a 5) y un comentario. Si vuelves a opinar sobre el mismo lugar, tu reseña se reemplaza.
-- Los usuarios y las reseñas se guardan en la base de datos SQLite (`db.sqlite3`). Ese archivo no se sube a GitHub.
-- Los lugares y las zonas de precaución siguen estando en `rutas/datos.py`.
+---
 
-## Datos para probar la funcionalidad corazón
+## Ejemplos para probar que funciona
 
-Los datos están precargados en `rutas/datos.py`: 6 lugares, 3 zonas de precaución y 3 puntos de partida de ejemplo.
+Dejamos unos datos listos en `rutas/datos.py` (6 lugares turísticos, 3 zonas peligrosas y 3 puntos de inicio de ejemplo) para no tener que andar buscando coordenadas a mano:
 
-| Caso | Punto de partida | Destino | Qué debería pasar |
-|---|---|---|---|
-| 1. Principal | Punto de ejemplo "Cerro Alegre" | Cerro Concepción | Se dibuja la ruta, con distancia y tiempo, y aparece el mensaje verde de que no pasa por zonas |
-| 2. Alternativo | Punto de ejemplo "Plaza Sotomayor" | Cerro Alegre | Se dibuja la ruta y aparece un aviso amarillo, porque el punto de partida está dentro de la zona "Barrio Puerto" |
-| 3. Error | Ninguno | Cualquiera | Aparece el mensaje "Primero elige tu punto de partida" |
+- **Caso 1 (Ruta limpia):** Elige el punto de ejemplo *"Cerro Alegre"* como inicio y *"Cerro Concepción"* como destino. Debería dibujar la ruta y salir un cuadro verde diciendo que no pasa por zonas de precaución.
+- **Caso 2 (Ruta con aviso):** Elige *"Plaza Sotomayor"* como inicio y *"Cerro Alegre"* como destino. Va a calcular la ruta pero te saldrá una alerta amarilla porque la plaza está justo dentro de la zona de cuidado "Barrio Puerto".
+- **Caso 3 (Si falta un dato):** Si aprietas *"Calcular ruta"* sin haber elegido dónde partes, te sale un aviso pidiendo que elijas primero el punto de partida.
 
-Pasos: elige el punto de partida, elige el destino y presiona **Calcular ruta**.
+---
 
-## Pruebas automáticas
+## Cómo ordenamos los archivos
 
-```
-python manage.py test
-```
+- `config/`: Archivos de configuración del proyecto Django y las URLs generales.
+- `rutas/`: La app principal donde está todo nuestro código:
+  - `datos.py`: Listas con las coordenadas de los lugares, las zonas de cuidado y los puntos de ejemplo.
+  - `calculos.py`: Las funciones que piden las rutas a internet y revisan si chocan con los círculos de precaución.
+  - `models.py`: La tabla de la base de datos para guardar las reseñas.
+  - `views.py`: Lo que recibe los clics del usuario y manda los datos a los HTML.
+  - `templates/rutas/`: Las páginas HTML.
+  - `static/rutas/fotos/`: Las fotos de los lugares turísticos.
 
-## Estructura del proyecto
 
-```
-valpo_seguro/
-├── manage.py               controla el proyecto (runserver, test)
-├── requirements.txt        librerías que hay que instalar
-├── .env.example            plantilla del archivo .env (clave de OpenRouteService)
-├── config/
-│   ├── settings.py         configuración
-│   ├── urls.py             manda todas las direcciones a la app "rutas"
-│   └── wsgi.py             conexión con el servidor
-└── rutas/                  nuestra app
-    ├── datos.py            lugares, zonas y puntos de partida
-    ├── models.py           tabla de reseñas (los usuarios los trae Django)
-    ├── migrations/         instrucciones para crear la tabla de reseñas
-    ├── calculos.py         procesamiento: pedir rutas (OSRM u OpenRouteService), medir zonas y elegir la mejor
-    ├── views.py            recibe lo que elige el usuario y prepara el resultado
-    ├── urls.py             direcciones de la app (/ y /lugares/)
-    ├── tests.py            pruebas automáticas
-    ├── templates/rutas/    páginas HTML (base, mapa y lugares)
-    └── static/rutas/fotos/ fotos de los lugares
-```
 
-## Limitaciones de esta versión
-
-- Si el servicio de rutas no responde (por ejemplo, sin internet o con una clave inválida), la página muestra un mensaje de error.
-- Sin clave, el servicio OSRM ofrece una ruta alternativa como máximo; si ninguna evita las zonas, la app avisa por cuáles pasa.
-- Con clave, las zonas que contienen el punto de partida o el destino no se pueden evitar: solo se avisa. Si las zonas bloquean todos los caminos, se calcula la ruta sin evitarlas y se avisa.
-- La clave gratuita de OpenRouteService tiene un límite diario de consultas.
-- Las zonas de precaución son círculos marcados por el equipo y no garantizan seguridad.
-- Los lugares y las zonas no están en la base de datos: están en `rutas/datos.py`. La base de datos guarda solo usuarios y reseñas.
-- No hay panel de administración, recuperación de contraseña, ni se pueden editar o borrar reseñas (solo reemplazarlas).
