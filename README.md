@@ -61,20 +61,16 @@ python manage.py runserver
 
 6. Entra desde tu navegador a: **http://127.0.0.1:8000/**
 
-*(Si quieres correr los tests automáticos que hicimos para revisar que no haya errores, escribe `python manage.py test` en la terminal).*
-
 ---
 
-## Clave de OpenRouteService (Opcional)
+## Clave de OpenRouteService
 
-El programa funciona altiro sin configurar ninguna clave, pero en ese modo solo te **avisa** si pasas por una zona de cuidado. Para que la ruta **evite** de verdad esas zonas hay que poner una clave gratuita de OpenRouteService:
+El programa no esquiva las zonas peligrosas sin el token.
 
 1. Créate una cuenta gratis en [openrouteservice.org](https://openrouteservice.org) y genera un token.
 2. Duplica el archivo `.env.example` que está en la carpeta principal y cámbiale el nombre a `.env`.
 3. Abre el `.env` y pega tu clave al lado de `ORS_API_KEY=` (sin espacios ni comillas).
 4. Apaga el servidor (`Ctrl + C`) y vuélvelo a prender con `python manage.py runserver`.
-
-*(El `.env` está puesto en el `.gitignore` para que no se suba la clave personal a GitHub).*
 
 ---
 
